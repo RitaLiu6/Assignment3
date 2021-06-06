@@ -1,6 +1,6 @@
 ---
 title: 'Weekly Exercises #3'
-author: "Put your name here"
+author: "Rita Liu"
 output: 
   html_document:
     keep_md: TRUE
@@ -12,7 +12,7 @@ output:
 
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
+knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
 ```
 
 ```{r libraries}
@@ -76,33 +76,66 @@ These exercises will reiterate what you learned in the "Expanding the data wrang
   1. Summarize the `garden_harvest` data to find the total harvest weight in pounds for each vegetable and day of week (HINT: use the `wday()` function from `lubridate`). Display the results so that the vegetables are rows but the days of the week are columns.
 
 ```{r}
-
+garden_harvest %>% 
+  mutate(weight_lbs =  weight*0.00220462,
+         day_week = wday(date, label = TRUE))%>% 
+  group_by(vegetable,day_week) %>% 
+  summarise(total_weight = sum(weight_lbs)) %>% 
+  pivot_wider(names_from = day_week , values_from = total_weight )
 ```
 
   2. Summarize the `garden_harvest` data to find the total harvest in pound for each vegetable variety and then try adding the plot from the `garden_planting` table. This will not turn out perfectly. What is the problem? How might you fix it?
+```{r}
+garden_planting
+```
+  
 
 ```{r}
-
+garden_harvest %>% 
+  mutate(weight_lbs =  weight*0.00220462) %>% 
+  group_by(vegetable,variety) %>% 
+  summarise(total_weight = sum(weight_lbs)) %>% 
+  left_join(garden_planting,
+            by =  c('vegetable','variety'))
 ```
 
+> The problem is that the same vegetable with the same variety was planted in different plot. {?}  
+
+
   3. I would like to understand how much money I "saved" by gardening, for each vegetable type. Describe how I could use the `garden_harvest` and `garden_spending` datasets, along with data from somewhere like [this](https://products.wholefoodsmarket.com/search?sort=relevance&store=10542) to answer this question. You can answer this in words, referencing various join functions. You don't need R code but could provide some if it's helpful.
+
+> We could, first of all, calculate the average price of each variety of each vegetable from all stores. Then, we could use left join, joining on vegetable and variety, creating a new variable called money_saved by using the weight time the average price calculated before. 
 
   4. Subset the data to tomatoes. Reorder the tomato varieties from smallest to largest first harvest date. Create a barplot of total harvest in pounds for each variety, in the new order.
 
 ```{r}
-
+garden_harvest %>% 
+  filter(vegetable == "tomatoes") %>% 
+  mutate(variety = fct_reorder(variety, date, .desc = TRUE),
+         weight_lbs =  weight*0.00220462) %>% 
+  group_by(variety) %>% 
+  summarise(total_weight = sum(weight_lbs)) %>% 
+  ggplot(aes(x = total_weight, y = variety)) + 
+  geom_col()
+  
 ```
 
   5. In the `garden_harvest` data, create two new variables: one that makes the varieties lowercase and another that finds the length of the variety name. Arrange the data by vegetable and length of variety name (smallest to largest), with one row for each vegetable variety. HINT: use `str_to_lower()`, `str_length()`, and `distinct()`.
   
 ```{r}
-
+garden_harvest %>% 
+  mutate(lower_variety = str_to_lower(variety),
+         length_variety = str_length(variety)) %>% 
+  arrange(lower_variety,length_variety) %>% 
+  distinct(vegetable,variety,.keep_all = TRUE)
 ```
 
   6. In the `garden_harvest` data, find all distinct vegetable varieties that have "er" or "ar" in their name. HINT: `str_detect()` with an "or" statement (use the | for "or") and `distinct()`.
 
 ```{r}
-
+garden_harvest %>% 
+  mutate(special_char = (str_detect(variety, 'er') | str_detect(variety, 'ar'))) %>% 
+  distinct(vegetable,variety,.keep_all = TRUE)
 ```
 
 
