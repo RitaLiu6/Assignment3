@@ -175,65 +175,125 @@ It's natural to expect that bikes are rented more at some times of day, some day
   7. A density plot, which is a smoothed out histogram, of the events versus `sdate`. Use `geom_density()`.
   
 ```{r}
-
+Trips %>% 
+  ggplot(aes(sdate)) + 
+  geom_density()
 ```
   
   8. A density plot of the events versus time of day.  You can use `mutate()` with `lubridate`'s  `hour()` and `minute()` functions to extract the hour of the day and minute within the hour from `sdate`. Hint: A minute is 1/60 of an hour, so create a variable where 3:30 is 3.5 and 3:45 is 3.75.
   
 ```{r}
-
+Trips %>%
+  mutate(sd_hour = hour(sdate),
+         sd_minute = minute(sdate),
+         sd_time = sd_hour + sd_minute/60) %>% 
+  ggplot(aes(sd_time)) + 
+  geom_density()
 ```
   
   9. A bar graph of the events versus day of the week. Put day on the y-axis.
   
 ```{r}
-
+Trips %>%
+  mutate(sd_week = wday(sdate,label = TRUE)) %>% 
+  ggplot(aes(sd_week)) +
+  geom_bar()
 ```
   
   10. Facet your graph from exercise 8. by day of the week. Is there a pattern?
   
 ```{r}
-
+Trips %>%
+  mutate(sd_week = wday(sdate,label = TRUE),
+         sd_hour = hour(sdate),
+         sd_minute = minute(sdate),
+         sd_time = sd_hour + sd_minute/60) %>% 
+  ggplot(aes(sd_time)) + 
+  geom_density() +
+  facet_wrap(vars(sd_week))
 ```
+  > Yes. Except for weekends, there are two peaks for renting bikes, one in teh morning and the other in the afternoon.   
   
 The variable `client` describes whether the renter is a regular user (level `Registered`) or has not joined the bike-rental organization (`Causal`). The next set of exercises investigate whether these two different categories of users show different rental behavior and how `client` interacts with the patterns you found in the previous exercises. 
 
   11. Change the graph from exercise 10 to set the `fill` aesthetic for `geom_density()` to the `client` variable. You should also set `alpha = .5` for transparency and `color=NA` to suppress the outline of the density function.
   
 ```{r}
-
+Trips %>%
+  mutate(sd_week = wday(sdate,label = TRUE),
+         sd_hour = hour(sdate),
+         sd_minute = minute(sdate),
+         sd_time = sd_hour + sd_minute/60) %>% 
+  ggplot(aes(y = sd_time,fill = client)) + 
+  geom_density(alpha = 0.5, color = NA) +
+  facet_wrap(vars(sd_week))
 ```
 
   12. Change the previous graph by adding the argument `position = position_stack()` to `geom_density()`. In your opinion, is this better or worse in terms of telling a story? What are the advantages/disadvantages of each?
   
 ```{r}
-
+Trips %>%
+  mutate(sd_week = wday(sdate,label = TRUE),
+         sd_hour = hour(sdate),
+         sd_minute = minute(sdate),
+         sd_time = sd_hour + sd_minute/60) %>% 
+  ggplot(aes(y = sd_time,fill = client)) + 
+  geom_density(alpha = 0.5, color = NA,position = position_stack()) +
+  facet_wrap(vars(sd_week))
 ```
+  > I think it's better to tell a story. The advantages of using `position = position_stack()` is that we can see each density curve more clearly and the two curves are comparable(??)   
   
   13. In this graph, go back to using the regular density plot (without `position = position_stack()`). Add a new variable to the dataset called `weekend` which will be "weekend" if the day is Saturday or Sunday and  "weekday" otherwise (HINT: use the `ifelse()` function and the `wday()` function from `lubridate`). Then, update the graph from the previous problem by faceting on the new `weekend` variable. 
   
 ```{r}
-
+Trips %>%
+  mutate(sd_week = wday(sdate,label = TRUE),
+         sd_hour = hour(sdate),
+         sd_minute = minute(sdate),
+         sd_time = sd_hour + sd_minute/60,
+         weekend = ifelse(sd_week %in% c('Sun','Sat'),1,0)) %>% 
+  ggplot(aes(y = sd_time,fill = client)) + 
+  geom_density(alpha = 0.5, color = NA,position = position_stack()) +
+  facet_wrap(vars(weekend))
 ```
   
   14. Change the graph from the previous problem to facet on `client` and fill with `weekday`. What information does this graph tell you that the previous didn't? Is one graph better than the other?
   
 ```{r}
-
+Trips %>%
+  mutate(sd_week = wday(sdate,label = TRUE),
+         sd_hour = hour(sdate),
+         sd_minute = minute(sdate),
+         sd_time = sd_hour + sd_minute/60,
+         weekend = ifelse(sd_week %in% c('Sun','Sat'),1,0)) %>% 
+  ggplot(aes(x = sd_time,fill = factor(weekend))) + 
+  geom_density(alpha = 0.5, color = NA,position = position_stack()) +
+  facet_wrap(vars(client))
 ```
+
+> Whether it is weekend seems to affect the bike renting pattern of registered users. 
   
 ### Spatial patterns
 
   15. Use the latitude and longitude variables in `Stations` to make a visualization of the total number of departures from each station in the `Trips` data. Use either color or size to show the variation in number of departures. We will improve this plot next week when we learn about maps!
   
 ```{r}
-
+Stations
+Trips
 ```
   
   16. Only 14.4% of the trips in our data are carried out by casual users. Create a plot that shows which area(s) have stations with a much higher percentage of departures by casual users. What patterns do you notice? (Again, we'll improve this next week when we learn about maps).
   
 ```{r}
-
+Trips %>% 
+  group_by(sstation) %>% 
+  mutate(all = n()) %>% 
+  filter(client == 'Casual') %>% 
+  summarise(casual_sum = n(),
+            all = mean(all)) %>% 
+  mutate(per_casual = casual_sum/all) %>% 
+  ggplot(aes(x = per_casual, y = sstation)) +
+  geom_col()
 ```
   
 ### Spatiotemporal patterns
