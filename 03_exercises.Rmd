@@ -163,7 +163,7 @@ Here is the code to read in the data. We do this a little differently than usual
 
 ```{r cache=TRUE}
 data_site <- 
-  "https://www.macalester.edu/~dshuman1/data/112/2014-Q4-Trips-History-Data-Small.rds" 
+  "https://www.macalester.edu/~dshuman1/data/112/2014-Q4-Trips-History-Data.rds" 
 Trips <- readRDS(gzcon(url(data_site)))
 Stations<-read_csv("http://www.macalester.edu/~dshuman1/data/112/DC-Stations.csv")
 ```
@@ -215,9 +215,11 @@ Trips %>%
          sd_time = sd_hour + sd_minute/60) %>% 
   ggplot(aes(sd_time)) + 
   geom_density() +
-  facet_wrap(vars(sd_week))
+  facet_wrap(vars(sd_week)) + 
+  labs(x = 'Time of start date')
 ```
-  > Yes. Except for weekends, there are two peaks for renting bikes, one in teh morning and the other in the afternoon.   
+ 
+> Yes. Except for weekends, there are two peaks for rental bikes, one in teh morning and the other in the afternoon.   
   
 The variable `client` describes whether the renter is a regular user (level `Registered`) or has not joined the bike-rental organization (`Causal`). The next set of exercises investigate whether these two different categories of users show different rental behavior and how `client` interacts with the patterns you found in the previous exercises. 
 
@@ -245,9 +247,12 @@ Trips %>%
          sd_time = sd_hour + sd_minute/60) %>% 
   ggplot(aes(x = sd_time,fill = client)) + 
   geom_density(alpha = 0.5, color = NA,position = position_stack()) +
-  facet_wrap(vars(sd_week))
+  facet_wrap(vars(sd_week)) + 
+  labs(x = 'time of start date')
 ```
-  > I think it's better to tell a story. The advantages of using `position = position_stack()` is that we can see each density curve more clearly and the two curves are comparable(??)   
+
+> I think it's better to tell a story. The advantages of using `position = position_stack()` is that we can see the proportion of rides of each type of clients at a given time. However, to observe small differences between two groups, the previous one might be better. 
+    
   
   13. In this graph, go back to using the regular density plot (without `position = position_stack()`). Add a new variable to the dataset called `weekend` which will be "weekend" if the day is Saturday or Sunday and  "weekday" otherwise (HINT: use the `ifelse()` function and the `wday()` function from `lubridate`). Then, update the graph from the previous problem by faceting on the new `weekend` variable. 
   
@@ -257,10 +262,11 @@ Trips %>%
          sd_hour = hour(sdate),
          sd_minute = minute(sdate),
          sd_time = sd_hour + sd_minute/60,
-         weekend = ifelse(sd_week %in% c('Sun','Sat'),1,0)) %>% 
+         weekend = ifelse(sd_week %in% c('Sun','Sat'),'weekend','weekday')) %>% 
   ggplot(aes(x = sd_time,fill = client)) + 
   geom_density(alpha = 0.5, color = NA,position = position_stack()) +
-  facet_wrap(vars(weekend))
+  facet_wrap(vars(weekend)) +
+  labs(x = 'time of start date')
 ```
   
   14. Change the graph from the previous problem to facet on `client` and fill with `weekday`. What information does this graph tell you that the previous didn't? Is one graph better than the other?
@@ -271,13 +277,15 @@ Trips %>%
          sd_hour = hour(sdate),
          sd_minute = minute(sdate),
          sd_time = sd_hour + sd_minute/60,
-         weekend = ifelse(sd_week %in% c('Sun','Sat'),1,0)) %>% 
+         weekend = ifelse(sd_week %in% c('Sun','Sat'),'weekend','weekday')) %>% 
   ggplot(aes(x = sd_time,fill = factor(weekend))) + 
   geom_density(alpha = 0.5, color = NA,position = position_stack()) +
-  facet_wrap(vars(client))
+  facet_wrap(vars(client))  + 
+  labs(x = 'time of start date',fill = 'weekend')
 ```
 
-> Whether it is weekend seems to affect the bike renting pattern of registered users. 
+> The second graph allows a more direct comparison between usage of bikes in weekends and weekdays within each client type. It seems to show that whether it is weekends could affect the bike renting pattern of registered users: less registered users rent bikes at noon in weekdays. I think the second graph is better at telling stories since it shows a more direct comparison within each client type.    
+
   
 ### Spatial patterns
 
@@ -293,22 +301,23 @@ Trips %>%
             lat = mean(lat),
             long = mean(long)) %>% 
   ggplot(aes(x = lat, y = long,size = total_dep)) + 
-  geom_point()
+  geom_point(alpha = 0.5) +
+  labs(x = 'latitude', y = 'longtitude',title = 'numbers of departure at each station')
 ```
   
   16. Only 14.4% of the trips in our data are carried out by casual users. Create a plot that shows which area(s) have stations with a much higher percentage of departures by casual users. What patterns do you notice? (Again, we'll improve this next week when we learn about maps).
   
-```{r,fig.width = 15, fig.height=30}
+```{r}
 Trips %>% 
   group_by(sstation) %>% 
-  mutate(all = n()) %>% 
-  filter(client == 'Casual') %>% 
-  summarise(casual_sum = n(),
-            all = mean(all)) %>% 
-  mutate(per_casual = casual_sum/all) %>% 
-  ggplot(aes(x = per_casual, y = fct_reorder(sstation,per_casual))) +
-  geom_col()
+  summarise(per_casual = mean(client == 'Casual')) %>% 
+  left_join(Stations,by = c('sstation' = 'name'), keep = TRUE) %>% 
+  ggplot(aes(x = lat, y = long, color = per_casual)) +
+  geom_point(alpha = 0.7) + 
+  labs(x = 'latitude', y = 'longtitude',title = 'percent of casual users at each station')
 ```
+  > It seems to me that if there is a lot of stations nearby, there won't be a lot of casual users: as we can see, at places where points are concentrated, the points are usually darker. But at the right corner where the points are scattered, the points are lighter in general.  
+  
   
 ### Spatiotemporal patterns
 
@@ -355,7 +364,9 @@ stat_date_comb %>%
 ## GitHub link
 
   20. Below, provide a link to your GitHub page with this set of Weekly Exercises. Specifically, if the name of the file is 03_exercises.Rmd, provide a link to the 03_exercises.md file, which is the one that will be most readable on GitHub.
- http://github.com/RitaLiu6/Assignment3  
+  
+[GitHub link](https://github.com/RitaLiu6/Assignment3/blob/main/03_exercises.md)
+
  
 ## Challenge problem! 
 
