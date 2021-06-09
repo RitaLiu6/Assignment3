@@ -127,7 +127,7 @@ garden_harvest %>%
 garden_harvest %>% 
   mutate(lower_variety = str_to_lower(variety),
          length_variety = str_length(variety)) %>% 
-  arrange(lower_variety,length_variety) %>% 
+  arrange(vegetable,length_variety) %>% 
   distinct(vegetable,variety,.keep_all = TRUE)
 ```
 
@@ -264,7 +264,7 @@ Trips %>%
          sd_time = sd_hour + sd_minute/60,
          weekend = ifelse(sd_week %in% c('Sun','Sat'),'weekend','weekday')) %>% 
   ggplot(aes(x = sd_time,fill = client)) + 
-  geom_density(alpha = 0.5, color = NA,position = position_stack()) +
+  geom_density(alpha = 0.5, color = NA) +
   facet_wrap(vars(weekend)) +
   labs(x = 'time of start date')
 ```
@@ -279,7 +279,7 @@ Trips %>%
          sd_time = sd_hour + sd_minute/60,
          weekend = ifelse(sd_week %in% c('Sun','Sat'),'weekend','weekday')) %>% 
   ggplot(aes(x = sd_time,fill = factor(weekend))) + 
-  geom_density(alpha = 0.5, color = NA,position = position_stack()) +
+  geom_density(alpha = 0.5, color = NA) +
   facet_wrap(vars(client))  + 
   labs(x = 'time of start date',fill = 'weekend')
 ```
@@ -358,6 +358,8 @@ stat_date_comb %>%
   
 ```
   
+> A bigger proportion of casual users tend to rent bikes during weekends while registered users are more likely to rent bikes in weekdays. 
+
 
 **DID YOU REMEMBER TO GO BACK AND CHANGE THIS SET OF EXERCISES TO THE LARGER DATASET? IF NOT, DO THAT NOW.**
 
